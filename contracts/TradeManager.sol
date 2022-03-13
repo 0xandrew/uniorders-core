@@ -145,7 +145,30 @@ abstract contract TradeManager is
         IUniswapV3Pool pool;
         (pool) = getPool(factory, trade.tokenIn, trade.tokenOut, trade.fee);
 
-        burnAndCollect(pool, trade.tickLower, trade.tickUpper, address(this));
+        (amount0, amount1) = burnAndCollect(
+            pool,
+            trade.tickLower,
+            trade.tickUpper,
+            address(this)
+        );
+
+        if (trade.tokenIn < trade.tokenOut) {
+            // 0 -> tokenIn; 1 -> tokenOut
+            TransferHelper.safeTransfer(trade.tokenIn, trade.operator, amount0);
+            TransferHelper.safeTransfer(
+                trade.tokenOut,
+                trade.operator,
+                amount1
+            );
+        } else {
+            // 1 -> tokenIn; 0 -> tokenOut
+            TransferHelper.safeTransfer(trade.tokenIn, trade.operator, amount1);
+            TransferHelper.safeTransfer(
+                trade.tokenOut,
+                trade.operator,
+                amount0
+            );
+        }
 
         trade.tradeStatus = Status.CANCELLED;
     }
